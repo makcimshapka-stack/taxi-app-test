@@ -10,7 +10,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 TOKEN = "ВАШ_ТОКЕН_БОТА"
 
 # ID вашої робочої групи водіїв (сюди надходитимуть замовлення)
-DRIVER_GROUP_ID = -100XXXXXXXXXX  # Замініть на реальний ID групи (має починатися з -100)
+DRIVER_GROUP_ID = -5044058539  # Замініть на реальний ID групи (має починатися з -100)
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
