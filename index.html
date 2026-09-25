@@ -12,16 +12,16 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body, html { width: 100%; height: 100%; background: #f5f5f5; overflow: hidden; }
-        #map { width: 100%; height: 38vh; }
-        .panel { position: absolute; bottom: 0; left: 0; width: 100%; height: 62vh; background: #fff; border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 10px 15px; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; overflow-y: auto; }
-        .input-group { margin-bottom: 5px; }
+        #map { width: 100%; height: 36vh; }
+        .panel { position: absolute; bottom: 0; left: 0; width: 100%; height: 64vh; background: #fff; border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 10px 15px; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; overflow-y: auto; }
+        .input-group { margin-bottom: 4px; }
         .input-group label { display: block; font-size: 11px; font-weight: 600; margin-bottom: 2px; color: #777; }
         .input-row { display: flex; gap: 6px; }
-        .input-group input { width: 100%; padding: 7px 10px; border: 1px solid #ccc; border-radius: 10px; font-size: 13px; outline: none; }
+        .input-group input { width: 100%; padding: 6px 10px; border: 1px solid #ccc; border-radius: 10px; font-size: 13px; outline: none; }
         .input-group input:focus { border-color: #2481cc; }
         .action-btn { background: #e0e0e0; border: none; border-radius: 10px; padding: 0 10px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; }
         .action-btn.active { background: #2481cc; color: #fff; }
-        .geo-btn { width: 100%; background: #f0f0f0; border: 1px solid #ddd; border-radius: 8px; padding: 5px; font-size: 11px; font-weight: 600; cursor: pointer; margin-bottom: 5px; color: #333; text-align: center; }
+        .geo-btn { width: 100%; background: #f0f0f0; border: 1px solid #ddd; border-radius: 8px; padding: 5px; font-size: 11px; font-weight: 600; cursor: pointer; margin-bottom: 4px; color: #333; text-align: center; }
         .order-btn { width: 100%; padding: 10px; background-color: #2ea44f; color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 4px; }
         .map-hint { font-size: 11px; color: #e67e22; text-align: center; margin-bottom: 2px; font-weight: bold; min-height: 14px; }
         .price-box { background: #eef9f0; border: 1px solid #d1e7dd; border-radius: 10px; padding: 6px; text-align: center; margin-top: 4px; }
@@ -61,17 +61,40 @@
             <!-- Кнопки вибору тарифу -->
             <div style="margin-bottom: 4px;">
                 <label style="display: block; font-size: 11px; font-weight: 600; margin-bottom: 2px; color: #777;">🏷️ Виберіть напрямок:</label>
-                <div style="display: flex; gap: 3px; flex-wrap: wrap;">
-                    <button type="button" id="tariffCity" class="action-btn active" style="flex: 1; min-width: 30%; padding: 5px; font-size: 10px;" onclick="setTariff('city')">Місто (100)</button>
-                    <button type="button" id="tariffBridge" class="action-btn" style="flex: 1; min-width: 30%; padding: 5px; font-size: 10px;" onclick="setTariff('bridge')">Міст (150)</button>
-                    <button type="button" id="tariffHanz" class="action-btn" style="flex: 1; min-width: 30%; padding: 5px; font-size: 10px;" onclick="setTariff('ganzhivka')">Ганжівка (150)</button>
-                    <button type="button" id="tariffEdn" class="action-btn" style="flex: 1; min-width: 30%; padding: 5px; font-size: 10px;" onclick="setTariff('ednannya')">Єднання (230)</button>
-                    <button type="button" id="tariffLish" class="action-btn" style="flex: 1; min-width: 30%; padding: 5px; font-size: 10px;" onclick="setTariff('lishynivka')">Ліщинівка (230)</button>
-                    <button type="button" id="tariffMid" class="action-btn" style="flex: 1; min-width: 30%; padding: 5px; font-size: 10px;" onclick="setTariff('midianivka')">Мідянівка (250)</button>
-                    <button type="button" id="tariffSukh" class="action-btn" style="flex: 1; min-width: 30%; padding: 5px; font-size: 10px;" onclick="setTariff('sukhinivka')">Сухинівка (300)</button>
-                    <button type="button" id="tariffBil" class="action-btn" style="flex: 1; min-width: 30%; padding: 5px; font-size: 10px;" onclick="setTariff('bilyky')">Білики (400)</button>
-                    <button type="button" id="tariffPer" class="action-btn" style="flex: 1; min-width: 30%; padding: 5px; font-size: 10px;" onclick="setTariff('perehonivka')">Перегонівка (450)</button>
-                    <button type="button" id="tariffOut" class="action-btn" style="flex: 1; min-width: 30%; padding: 5px; font-size: 10px;" onclick="setTariff('outskirt')">Інше (25 грн/км)</button>
+                <div style="display: flex; gap: 3px; flex-wrap: wrap; max-height: 115px; overflow-y: auto; padding-right: 2px;">
+                    <button type="button" id="tariffCity" class="action-btn active" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('city')">Місто (100)</button>
+                    <button type="button" id="tariffBridge" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('bridge')">Міст (150)</button>
+                    <button type="button" id="tariffKrasna" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('krasna')">Красна (250)</button>
+                    <button type="button" id="tariffRidne" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('ridne')">Рідне / Кунівка (200)</button>
+                    <button type="button" id="tariffGanz" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('ganzhivka')">Ганжівка (200)</button>
+                    <button type="button" id="tariffLish" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('lishynivka')">Ліщинівка (250)</button>
+                    <button type="button" id="tariffBut" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('butenky')">Бутенки (350)</button>
+                    <button type="button" id="tariffBil" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('bilyky')">Білики (350)</button>
+                    <button type="button" id="tariffGali" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('gali')">Галі (300)</button>
+                    <button type="button" id="tariffPol" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('polissya')">Полісся / Сухинівка (350)</button>
+                    <button type="button" id="tariffGar" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('garbuzivka')">Гарбузівка (400)</button>
+                    <button type="button" id="tariffSosn" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('sosnivka')">Соснівка (400)</button>
+                    <button type="button" id="tariffZhuky" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('zhuky')">Жуки (450)</button>
+                    <button type="button" id="tariffPer" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('perehonivka')">Перегонівка (450)</button>
+                    <button type="button" id="tariffMik" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('mykolaivka')">Миколаївка (500)</button>
+                    <button type="button" id="tariffBrod" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('brodshchyna')">Бродщина (500)</button>
+                    <button type="button" id="tariffShen" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('shengury')">Шенгури (500)</button>
+                    <button type="button" id="tariffTroy" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('troyany')">Трояни (500)</button>
+                    <button type="button" id="tariffVit" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('vitrova_balka')">Вітрова Балка (500)</button>
+                    <button type="button" id="tariffVas" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('vasylivka')">Василівка (550)</button>
+                    <button type="button" id="tariffRub" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('rubany')">Рубани (550)</button>
+                    <button type="button" id="tariffDryz" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('dryzhyna')">Дрижина (550)</button>
+                    <button type="button" id="tariffMark" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('markivka')">Марківка (550)</button>
+                    <button type="button" id="tariffGay" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('gayove')">Гайове (300)</button>
+                    <button type="button" id="tariffVil" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('vilhovatka')">Вільховатка (650)</button>
+                    <button type="button" id="tariffDem" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('demenky')">Деменки (670)</button>
+                    <button type="button" id="tariffDash" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('dashkivka')">Дашківка (700)</button>
+                    <button type="button" id="tariffOrl" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('orlyk')">Орлик (1000)</button>
+                    <button type="button" id="tariffSvit" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('svitohirsk')">Світлогірськ (1000)</button>
+                    <button type="button" id="tariffPrid" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('pridniprianske')">Придніпрянське / Радянське (1300)</button>
+                    <button type="button" id="tariffPolt" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('poltava')">Полтава (1500)</button>
+                    <button type="button" id="tariffDnipro" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('dnipro')">Дніпро (3000)</button>
+                    <button type="button" id="tariffOut" class="action-btn" style="min-width: 30%; flex: 1; padding: 4px; font-size: 10px;" onclick="setTariff('outskirt')">Інше (25 грн/км)</button>
                 </div>
             </div>
 
@@ -104,6 +127,14 @@
 
         let fromMarker = null;
         let toMarker = null;
+
+        const allTariffs = [
+            'city', 'bridge', 'krasna', 'ridne', 'ganzhivka', 'lishynivka', 'butenky', 
+            'bilyky', 'gali', 'polissya', 'garbuzivka', 'sosnivka', 'zhuky', 'perehonivka', 
+            'mykolaivka', 'brodshchyna', 'shengury', 'troyany', 'vitrova_balka', 'vasylivka', 
+            'rubany', 'dryzhyna', 'markivka', 'gayove', 'vilhovatka', 'demenky', 'dashkivka', 
+            'orlyk', 'svitohirsk', 'pridniprianske', 'poltava', 'dnipro', 'outskirt'
+        ];
 
         window.onload = function() {
             let savedPhone = localStorage.getItem("taxi_user_phone");
@@ -138,7 +169,7 @@
         function setTariff(type) {
             currentTariffType = type;
             
-            ['city', 'bridge', 'ganzhivka', 'ednannya', 'lishynivka', 'midianivka', 'sukhinivka', 'bilyky', 'perehonivka', 'outskirt'].forEach(t => {
+            allTariffs.forEach(t => {
                 let el = document.getElementById(getTariffElementId(t));
                 if(el) el.classList.remove('active');
             });
@@ -153,13 +184,36 @@
             switch(type) {
                 case 'city': return 'tariffCity';
                 case 'bridge': return 'tariffBridge';
-                case 'ganzhivka': return 'tariffHanz';
-                case 'ednannya': return 'tariffEdn';
+                case 'krasna': return 'tariffKrasna';
+                case 'ridne': return 'tariffRidne';
+                case 'ganzhivka': return 'tariffGanz';
                 case 'lishynivka': return 'tariffLish';
-                case 'midianivka': return 'tariffMid';
-                case 'sukhinivka': return 'tariffSukh';
+                case 'butenky': return 'tariffBut';
                 case 'bilyky': return 'tariffBil';
+                case 'gali': return 'tariffGali';
+                case 'polissya': return 'tariffPol';
+                case 'garbuzivka': return 'tariffGar';
+                case 'sosnivka': return 'tariffSosn';
+                case 'zhuky': return 'tariffZhuky';
                 case 'perehonivka': return 'tariffPer';
+                case 'mykolaivka': return 'tariffMik';
+                case 'brodshchyna': return 'tariffBrod';
+                case 'shengury': return 'tariffShen';
+                case 'troyany': return 'tariffTroy';
+                case 'vitrova_balka': return 'tariffVit';
+                case 'vasylivka': return 'tariffVas';
+                case 'rubany': return 'tariffRub';
+                case 'dryzhyna': return 'tariffDryz';
+                case 'markivka': return 'tariffMark';
+                case 'gayove': return 'tariffGay';
+                case 'vilhovatka': return 'tariffVil';
+                case 'demenky': return 'tariffDem';
+                case 'dashkivka': return 'tariffDash';
+                case 'orlyk': return 'tariffOrl';
+                case 'svitohirsk': return 'tariffSvit';
+                case 'pridniprianske': return 'tariffPrid';
+                case 'poltava': return 'tariffPolt';
+                case 'dnipro': return 'tariffDnipro';
                 case 'outskirt': return 'tariffOut';
             }
         }
@@ -205,45 +259,40 @@
             let desc = "По місту Кобеляки";
 
             switch(currentTariffType) {
-                case 'city':
-                    basePrice = 100;
-                    desc = "По місту Кобеляки";
-                    break;
-                case 'bridge':
-                    basePrice = 150;
-                    desc = "Через міст (Ворскла / Кобелячка)";
-                    break;
-                case 'ganzhivka':
-                    basePrice = 150;
-                    desc = "с. Ганжівка";
-                    break;
-                case 'ednannya':
-                    basePrice = 230;
-                    desc = "с. Єднання";
-                    break;
-                case 'lishynivka':
-                    basePrice = 230;
-                    desc = "с. Ліщинівка";
-                    break;
-                case 'midianivka':
-                    basePrice = 250;
-                    desc = "с. Мідянівка";
-                    break;
-                case 'sukhinivka':
-                    basePrice = 300;
-                    desc = "с. Сухинівка";
-                    break;
-                case 'bilyky':
-                    basePrice = 400;
-                    desc = "смт Білики";
-                    break;
-                case 'perehonivka':
-                    basePrice = 450;
-                    desc = "с. Перегонівка";
-                    break;
+                case 'city': basePrice = 100; desc = "По місту Кобеляки"; break;
+                case 'bridge': basePrice = 150; desc = "Через міст (Ворскла / Кобелячка)"; break;
+                case 'krasna': basePrice = 250; desc = "с. Красна"; break;
+                case 'ridne': basePrice = 200; desc = "с. Рідне (Кунівка)"; break;
+                case 'ganzhivka': basePrice = 200; desc = "с. Ганжівка"; break;
+                case 'lishynivka': basePrice = 250; desc = "с. Ліщинівка"; break;
+                case 'butenky': basePrice = 350; desc = "с. Бутенки"; break;
+                case 'bilyky': basePrice = 350; desc = "смт Білики"; break;
+                case 'gali': basePrice = 300; desc = "с. Галі"; break;
+                case 'polissya': basePrice = 350; desc = "с. Полісся (Сухинівка)"; break;
+                case 'garbuzivka': basePrice = 400; desc = "с. Гарбузівка"; break;
+                case 'sosnivka': basePrice = 400; desc = "с. Соснівка"; break;
+                case 'zhuky': basePrice = 450; desc = "с. Жуки"; break;
+                case 'perehonivka': basePrice = 450; desc = "с. Перегонівка"; break;
+                case 'mykolaivka': basePrice = 500; desc = "с. Миколаївка"; break;
+                case 'brodshchyna': basePrice = 500; desc = "с. Бродщина"; break;
+                case 'shengury': basePrice = 500; desc = "с. Шенгури"; break;
+                case 'troyany': basePrice = 500; desc = "с. Трояни"; break;
+                case 'vitrova_balka': basePrice = 500; desc = "с. Вітрова Балка"; break;
+                case 'vasylivka': basePrice = 550; desc = "с. Василівка"; break;
+                case 'rubany': basePrice = 550; desc = "с. Рубани"; break;
+                case 'dryzhyna': basePrice = 550; desc = "с. Дрижина"; break;
+                case 'markivka': basePrice = 550; desc = "с. Марківка"; break;
+                case 'gayove': basePrice = 300; desc = "с. Гайове"; break;
+                case 'vilhovatka': basePrice = 650; desc = "с. Вільховатка"; break;
+                case 'demenky': basePrice = 670; desc = "с. Деменки"; break;
+                case 'dashkivka': basePrice = 700; desc = "с. Дашківка"; break;
+                case 'orlyk': basePrice = 1000; desc = "с. Орлик"; break;
+                case 'svitohirsk': basePrice = 1000; desc = "с. Світлогірськ"; break;
+                case 'pridniprianske': basePrice = 1300; desc = "с. Придніпрянське (Радянське)"; break;
+                case 'poltava': basePrice = 1500; desc = "м. Полтава"; break;
+                case 'dnipro': basePrice = 3000; desc = "м. Дніпро"; break;
                 case 'outskirt':
                     if (toCoords) {
-                        // Центр Кобеляк: 49.1435, 34.2015
                         let distFromCenter = getDistanceFromLatLonInKm(49.1435, 34.2015, toCoords.lat, toCoords.lng);
                         if (distFromCenter > 2.5) {
                             let extraKm = distFromCenter - 2.5;
