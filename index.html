@@ -12,18 +12,19 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body, html { width: 100%; height: 100%; background: #f5f5f5; overflow: hidden; }
-        #map { width: 100%; height: 45vh; }
-        .panel { position: absolute; bottom: 0; left: 0; width: 100%; height: 55vh; background: #fff; border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 15px 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; overflow-y: auto; }
-        .input-group { margin-bottom: 8px; }
-        .input-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 2px; color: #777; }
+        #map { width: 100%; height: 42vh; }
+        .panel { position: absolute; bottom: 0; left: 0; width: 100%; height: 58vh; background: #fff; border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 12px 18px; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; overflow-y: auto; }
+        .input-group { margin-bottom: 6px; }
+        .input-group label { display: block; font-size: 11px; font-weight: 600; margin-bottom: 2px; color: #777; }
         .input-row { display: flex; gap: 6px; }
-        .input-group input { width: 100%; padding: 9px 12px; border: 1px solid #ccc; border-radius: 10px; font-size: 14px; outline: none; }
+        .input-group input { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 10px; font-size: 13px; outline: none; }
         .input-group input:focus { border-color: #2481cc; }
-        .action-btn { background: #e0e0e0; border: none; border-radius: 10px; padding: 0 12px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .action-btn { background: #e0e0e0; border: none; border-radius: 10px; padding: 0 10px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
         .action-btn.active { background: #2481cc; color: #fff; }
-        .geo-btn { width: 100%; background: #f0f0f0; border: 1px solid #ddd; border-radius: 8px; padding: 7px; font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 8px; color: #333; text-align: center; }
-        .order-btn { width: 100%; padding: 12px; background-color: #2ea44f; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .map-hint { font-size: 11px; color: #e67e22; text-align: center; margin-bottom: 4px; font-weight: bold; min-height: 15px; }
+        .geo-btn { width: 100%; background: #f0f0f0; border: 1px solid #ddd; border-radius: 8px; padding: 6px; font-size: 12px; font-weight: 600; cursor: pointer; margin-bottom: 6px; color: #333; text-align: center; }
+        .order-btn { width: 100%; padding: 11px; background-color: #2ea44f; color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 4px; }
+        .map-hint { font-size: 11px; color: #e67e22; text-align: center; margin-bottom: 3px; font-weight: bold; min-height: 14px; }
+        .price-box { background: #eef9f0; border: 1px solid #d1e7dd; border-radius: 10px; padding: 8px; text-align: center; margin-top: 6px; }
     </style>
 </head>
 <body>
@@ -56,6 +57,11 @@
             </div>
 
             <button type="button" class="geo-btn" onclick="useCurrentLocation()">📍 Визначити моє положення (GPS)</button>
+
+            <div class="price-box">
+                <span style="font-size: 12px; color: #555;" id="priceDesc">Орієнтовна вартість:</span>
+                <div id="priceDisplay" style="font-size: 17px; font-weight: bold; color: #198754;">100 грн</div>
+            </div>
         </div>
 
         <button class="order-btn" onclick="submitOrder()">Підтвердити замовлення</button>
@@ -68,6 +74,8 @@
         let currentMode = 'from';
         let fromCoords = null;
         let toCoords = null;
+        let finalPrice = 100;
+        let priceDescription = "По місту";
 
         const kobelyakyCoords = [49.1435, 34.2015];
         const map = L.map('map').setView(kobelyakyCoords, 14);
@@ -86,6 +94,7 @@
                 document.getElementById('phone').value = savedPhone;
             }
             updateModeUI();
+            calculatePrice();
         };
 
         function setMode(mode) {
@@ -116,9 +125,7 @@
             if (currentMode === 'from') {
                 fromCoords = {lat, lng};
                 if (fromMarker) map.removeLayer(fromMarker);
-                fromMarker = L.marker([lat, lng], {draggable: true}).addTo(map)
-                    .bindPopup("Звідки").openPopup();
-                
+                fromMarker = L.marker([lat, lng], {draggable: true}).addTo(map).bindPopup("Звідки").openPopup();
                 reverseGeocode(lat, lng, 'addressFrom');
             } else {
                 toCoords = {lat, lng};
@@ -131,10 +138,65 @@
                     }),
                     draggable: true
                 }).addTo(map).bindPopup("Куди").openPopup();
-                
                 reverseGeocode(lat, lng, 'addressTo');
             }
+            calculatePrice();
         });
+
+        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+            let R = 6371;
+            let dLat = (lat2 - lat1) * (Math.PI/180);
+            let dLon = (lon2 - lon1) * (Math.PI/180);
+            let a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * (Math.PI/180)) * Math.cos(lat2 * (Math.PI/180)) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function calculatePrice() {
+            let basePrice = 100;
+            let desc = "По місту Кобеляки";
+
+            if (toCoords) {
+                // Відстань від центру Кобеляк (49.1435, 34.2015)
+                let distFromCenter = getDistanceFromLatLonInKm(49.1435, 34.2015, toCoords.lat, toCoords.lng);
+                
+                // Перевірка на міст (умовно: якщо довгота або широта потрапляють на річки Ворскла / Кобелячка, 
+                // або призначення далі за східний/західний берег, наприклад західніше довготи 34.192)
+                let isAcrossBridge = (toCoords.lng < 34.193); 
+
+                if (distFromCenter > 4.5) {
+                    // За містом: 100 грн база + 25 грн за кожен км
+                    let extraKm = distFromCenter - 4;
+                    basePrice = Math.round(100 + (extraKm * 25));
+                    desc = `За містом (~${Math.round(distFromCenter)} км)`;
+                } else if (isAcrossBridge) {
+                    basePrice = 150;
+                    desc = "Через міст (Ворскла / Кобелячка)";
+                } else {
+                    basePrice = 100;
+                    desc = "По місту Кобеляки";
+                }
+            }
+
+            // Перевірка нічного тарифу (після 23:50 або до 05:00 ранку)
+            let now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            let totalMinutes = hours * 60 + minutes;
+            let isNight = (totalMinutes >= 23 * 60 + 50) || (totalMinutes < 5 * 60);
+
+            if (isNight) {
+                basePrice *= 2;
+                desc += " (Нічний тариф ×2)";
+            }
+
+            finalPrice = basePrice;
+            priceDescription = desc;
+            document.getElementById('priceDisplay').innerText = `${finalPrice} грн`;
+            document.getElementById('priceDesc').innerText = `Орієнтовно: ${desc}`;
+        }
 
         function reverseGeocode(lat, lng, elementId) {
             fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
@@ -163,17 +225,16 @@
                     
                     map.setView([lat, lng], 16);
                     currentMode = 'from';
-                    
                     fromCoords = {lat, lng};
                     if (fromMarker) map.removeLayer(fromMarker);
                     fromMarker = L.marker([lat, lng]).addTo(map).bindPopup("Я тут").openPopup();
-                    
                     reverseGeocode(lat, lng, 'addressFrom');
-                }, function(error) {
-                    alert("Не вдалося отримати геолокацію. Увімкніть GPS на телефоні.");
+                    calculatePrice();
+                }, function() {
+                    alert("Не вдалося отримати геолокацію.");
                 }, {enableHighAccuracy: true});
             } else {
-                alert("Ваш браузер не підтримує геолокацію.");
+                alert("Геолокація не підтримується.");
             }
         }
 
@@ -183,17 +244,11 @@
             const addressTo = document.getElementById('addressTo').value.trim();
 
             if (!phone || phone.length < 9) {
-                alert("Будь ласка, введіть номер телефону!");
+                alert("Введіть номер телефону!");
                 return;
             }
-
-            if (!addressFrom) {
-                alert("Вкажіть адресу відправлення (Звідки)!");
-                return;
-            }
-
-            if (!addressTo) {
-                alert("Вкажіть пункт призначення (Куди)!");
+            if (!addressFrom || !addressTo) {
+                alert("Вкажіть адреси Звідки та Куди!");
                 return;
             }
 
@@ -203,6 +258,8 @@
                 phone: phone,
                 address_from: addressFrom,
                 address_to: addressTo,
+                price: finalPrice,
+                price_desc: priceDescription,
                 lat: fromCoords ? fromCoords.lat : null,
                 lng: fromCoords ? fromCoords.lng : null
             };
@@ -210,7 +267,7 @@
             if (window.Telegram && window.Telegram.WebApp) {
                 tg.sendData(JSON.stringify(orderData));
             } else {
-                alert("Помилка: відкривайте цей додаток через Telegram!");
+                alert("Відкривайте додаток через Telegram!");
             }
         }
     </script>
