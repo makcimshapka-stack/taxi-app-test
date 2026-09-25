@@ -43,7 +43,7 @@
             <div class="input-group">
                 <label for="addressFrom">📍 Звідки забирати?</label>
                 <div class="input-row">
-                    <input type="text" id="addressFrom" placeholder="Вулиця, будинок або орієнтир" oninput="calculatePrice()">
+                    <input type="text" id="addressFrom" placeholder="Вулиця, будинок або орієнтир">
                     <button type="button" class="action-btn" id="setFromBtn" onclick="setMode('from')">Ар. Звідки</button>
                 </div>
             </div>
@@ -51,7 +51,7 @@
             <div class="input-group">
                 <label for="addressTo">🏁 Куди їдемо?</label>
                 <div class="input-row">
-                    <input type="text" id="addressTo" placeholder="Пункт призначення" oninput="calculatePrice()">
+                    <input type="text" id="addressTo" placeholder="Пункт призначення">
                     <button type="button" class="action-btn" id="setToBtn" onclick="setMode('to')">Ар. Куди</button>
                 </div>
             </div>
@@ -75,7 +75,7 @@
         let fromCoords = null;
         let toCoords = null;
         let finalPrice = 100;
-        let priceDescription = "По місту Кобеляки";
+        let priceDescription = "По місту";
 
         const kobelyakyCoords = [49.1435, 34.2015];
         const map = L.map('map').setView(kobelyakyCoords, 14);
@@ -87,43 +87,6 @@
 
         let fromMarker = null;
         let toMarker = null;
-
-        // Фіксовані ціни згідно з вашим списком
-        const fixedPrices = {
-            "бутенки": { price: 350, name: "с. Бутенки" },
-            "білики": { price: 350, name: "смт Білики" },
-            "орлик": { price: 1000, name: "с. Орлик" },
-            "жуки": { price: 450, name: "с. Жуки" },
-            "придніпрянське": { price: 1300, name: "с. Придніпрянське" },
-            "радянське": { price: 1300, name: "с. Радянське" },
-            "полтава": { price: 1500, name: "м. Полтава" },
-            "дніпро": { price: 3000, name: "м. Дніпро" },
-            "світлогірськ": { price: 1000, name: "с. Світлогірськ" },
-            "василівка": { price: 550, name: "с. Василівка" },
-            "миколаївка": { price: 500, name: "с. Миколаївка" },
-            "бродщина": { price: 500, name: "с. Бродщина" },
-            "красна": { price: 250, name: "с. Красна" },
-            "кунівка": { price: 200, name: "с. Кунівка (Рідне)" },
-            "рідне": { price: 200, name: "с. Рідне" },
-            "ганжівка": { price: 200, name: "с. Ганжівка" },
-            "ліщинівка": { price: 250, name: "с. Ліщинівка" },
-            "галі": { price: 300, name: "с. Галі" },
-            "вільховатка": { price: 650, name: "с. Вільховатка" },
-            "деменки": { price: 670, name: "с. Деменки" },
-            "дашківка": { price: 700, name: "с. Дашківка" },
-            "сухинівка": { price: 350, name: "с. Сухинівка (Полісся)" },
-            "полісся": { price: 350, name: "с. Полісся" },
-            "шенгури": { price: 500, name: "с. Шенгури" },
-            "перегонівка": { price: 450, name: "с. Перегонівка" },
-            "гарбузівка": { price: 400, name: "с. Гарбузівка" },
-            "соснівка": { price: 400, name: "с. Соснівка" },
-            "гайове": { price: 300, name: "с. Гайове" },
-            "рубани": { price: 550, name: "с. Рубани" },
-            "дрижина": { price: 550, name: "с. Дрижина" },
-            "марківка": { price: 550, name: "с. Марківка" },
-            "трояни": { price: 500, name: "с. Трояни" },
-            "вітрова балка": { price: 500, name: "с. Вітрова Балка" }
-        };
 
         window.onload = function() {
             let savedPhone = localStorage.getItem("taxi_user_phone");
@@ -194,26 +157,17 @@
         function calculatePrice() {
             let basePrice = 100;
             let desc = "По місту Кобеляки";
-            
-            const addressToVal = document.getElementById('addressTo').value.toLowerCase();
-            
-            // Перевіряємо, чи введено назву села з фіксованого списку
-            let foundFixed = false;
-            for (let key in fixedPrices) {
-                if (addressToVal.includes(key)) {
-                    basePrice = fixedPrices[key].price;
-                    desc = fixedPrices[key].name;
-                    foundFixed = true;
-                    break;
-                }
-            }
 
-            // Якщо село не знайщене в текстовому полі, рахуємо по координатах або кілометражу
-            if (!foundFixed && toCoords) {
+            if (toCoords) {
+                // Відстань від центру Кобеляк (49.1435, 34.2015)
                 let distFromCenter = getDistanceFromLatLonInKm(49.1435, 34.2015, toCoords.lat, toCoords.lng);
+                
+                // Перевірка на міст (умовно: якщо довгота або широта потрапляють на річки Ворскла / Кобелячка, 
+                // або призначення далі за східний/західний берег, наприклад західніше довготи 34.192)
                 let isAcrossBridge = (toCoords.lng < 34.193); 
 
                 if (distFromCenter > 4.5) {
+                    // За містом: 100 грн база + 25 грн за кожен км
                     let extraKm = distFromCenter - 4;
                     basePrice = Math.round(100 + (extraKm * 25));
                     desc = `За містом (~${Math.round(distFromCenter)} км)`;
@@ -226,7 +180,7 @@
                 }
             }
 
-            // Нічний тариф (після 23:50 або до 05:00 ранку)
+            // Перевірка нічного тарифу (після 23:50 або до 05:00 ранку)
             let now = new Date();
             let hours = now.getHours();
             let minutes = now.getMinutes();
@@ -254,7 +208,6 @@
                     let parts = data.display_name.split(',');
                     let shortAddress = parts.slice(0, 3).join(',').trim();
                     document.getElementById(elementId).value = shortAddress;
-                    calculatePrice();
                 } else {
                     document.getElementById(elementId).value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
                 }
@@ -276,6 +229,7 @@
                     if (fromMarker) map.removeLayer(fromMarker);
                     fromMarker = L.marker([lat, lng]).addTo(map).bindPopup("Я тут").openPopup();
                     reverseGeocode(lat, lng, 'addressFrom');
+                    calculatePrice();
                 }, function() {
                     alert("Не вдалося отримати геолокацію.");
                 }, {enableHighAccuracy: true});
