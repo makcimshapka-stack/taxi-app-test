@@ -16,7 +16,6 @@ if not TOKEN:
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# Посилання на ваш тестовий веб-додаток з GitHub Pages
 WEB_APP_URL = "https://makcimshapka-stack.github.io/taxi-app-test/"
 
 @dp.message(Command("start"))
@@ -140,7 +139,7 @@ async def handle_driver_action(callback: CallbackQuery):
                     f"{car_info}\n\n"
                     "Очікуйте на автомобіль поруч із місцем посадки."
                 ), 
-                parse_mode="Markdown"
+                parse_Mode="Markdown"
             )
         except Exception:
             pass
