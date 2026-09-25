@@ -166,9 +166,9 @@
                 // або призначення далі за східний/західний берег, наприклад західніше довготи 34.192)
                 let isAcrossBridge = (toCoords.lng < 34.193); 
 
-                if (distFromCenter > 4.5) {
-                    // За містом: 100 грн база + 25 грн за кожен км
-                    let extraKm = distFromCenter - 4;
+                if (distFromCenter > 1.0) {
+                    // За містом: 100 грн база + 25 грн за кожен км після 1 км
+                    let extraKm = distFromCenter - 1.0;
                     basePrice = Math.round(100 + (extraKm * 25));
                     desc = `За містом (~${Math.round(distFromCenter)} км)`;
                 } else if (isAcrossBridge) {
