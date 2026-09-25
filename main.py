@@ -37,7 +37,7 @@ async def cmd_start(message: Message):
     welcome_text = (
         f"Вітаю, {message.from_user.first_name}! 👋\n\n"
         "🧪 Це **тестовий** бот служби таксі в Кобеляках.\n"
-        "Натисніть кнопку **«🚗 Замовити таксі»** внизу екрана, щоб відкрити карту:"
+        "Натисніть кнопку **«🚗 Замовити таксі»** внизу екрана, щоб відкрити карту та розрахувати вартість:"
     )
     
     await message.answer(welcome_text, reply_markup=keyboard)
@@ -50,6 +50,8 @@ async def handle_web_app_data(message: Message):
         address_from = data.get("address_from", "Центр (Кобеляки)")
         address_to = data.get("address_to", "Не вказано")
         phone_number = data.get("phone", "Не вказано")
+        price = data.get("price", "100")
+        price_desc = data.get("price_desc", "По місту")
         lat = data.get("lat")
         lng = data.get("lng")
         
@@ -60,6 +62,7 @@ async def handle_web_app_data(message: Message):
             "✅ **Ваше замовлення прийнято в роботу!**\n\n"
             f"📍 **Звідки:** {address_from}\n"
             f"🏁 **Куди:** {address_to}\n"
+            f"💰 **Вартість:** {price} грн _({price_desc})_\n"
             f"📞 **Телефон:** {phone_number}\n\n"
             "⏳ Очікуйте, шукаємо вільне авто..."
         )
@@ -86,6 +89,7 @@ async def handle_web_app_data(message: Message):
             "🚨 **НОВЕ ЗАМОВЛЕННЯ ТАКСІ (ТЕСТ)!** 🚨\n\n"
             f"📍 **Звідки:** {address_from}\n"
             f"🏁 **Куди:** {address_to}\n"
+            f"💰 **Вартість:** <b>{price} грн</b> _({price_desc})_\n"
             f"📞 **Телефон:** `{phone_number}`\n"
             f"👤 **Клієнт:** {user_name} (ID: {user_id})"
         )
