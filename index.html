@@ -88,6 +88,14 @@
         <input type="tel" id="phone" placeholder="+380XXXXXXXXX">
     </div>
 
+    <div class="form-group">
+        <label for="payment_method">Спосіб оплати:</label>
+        <select id="payment_method">
+            <option value="Готівка">💵 Готівка</option>
+            <option value="Картка">💳 Картка</option>
+        </select>
+    </div>
+
     <div id="map"></div>
 
     <div class="price-box" id="priceDisplay">
@@ -155,7 +163,6 @@
             let price = 100;
             let priceDesc = "По місту / До 2.5 км";
 
-            // Перевірка на наявність фіксованого тарифу за ключовим словом
             let foundFixed = false;
             for (let village in fixedTariffs) {
                 if (cleanText.includes(village)) {
@@ -167,10 +174,8 @@
             }
 
             if (!foundFixed) {
-                // Приблизний розрахунок відстані від центру (якщо немає у фіксованих)
-                // Для точності можна прив'язати координати або рахувати за замовчуванням
-                let distance = 3.5; // Умовна відстань для прикладу розрахунку поза містом
-                let baseDistance = 2.5; // Базова зона 2.5 км
+                let distance = 3.5; 
+                let baseDistance = 2.5; 
                 let basePrice = 100;
                 let perKmRate = 25;
 
@@ -184,13 +189,12 @@
                 }
             }
 
-            // Перевірка на нічний тариф (23:50 – 05:00) з множником x2
             const now = new Date();
             const hours = now.getHours();
             const minutes = now.getMinutes();
             const currentTimeMins = hours * 60 + minutes;
-            const nightStart = 23 * 60 + 50; // 23:50
-            const nightEnd = 5 * 60;       // 05:00
+            const nightStart = 23 * 60 + 50; 
+            const nightEnd = 5 * 60;       
 
             if (currentTimeMins >= nightStart || currentTimeMins < nightEnd) {
                 price *= 2;
@@ -205,13 +209,13 @@
             calculatePrice(this.value);
         });
 
-        // Початковий розрахунок
         calculatePrice("");
 
         document.getElementById('submitBtn').addEventListener('click', function() {
             const addressFrom = document.getElementById('address_from').value;
             const addressTo = document.getElementById('address_to').value;
             const phone = document.getElementById('phone').value;
+            const paymentMethod = document.getElementById('payment_method').value;
 
             if (!addressTo || !phone) {
                 alert('Будь ласка, введіть пункт призначення та номер телефону!');
@@ -224,6 +228,7 @@
                 address_from: addressFrom,
                 address_to: addressTo,
                 phone: phone,
+                payment_method: paymentMethod,
                 price: calculation.price,
                 price_desc: calculation.priceDesc
             };
