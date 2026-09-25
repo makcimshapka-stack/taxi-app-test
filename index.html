@@ -11,92 +11,118 @@
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 15px;
+            padding: 10px;
             background-color: #f4f4f9;
             color: #333;
         }
-        h2 {
+        #map {
+            width: 100%;
+            height: 250px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .instruction {
             text-align: center;
-            color: #2c3e50;
+            font-size: 13px;
+            font-weight: bold;
+            color: #b9770e;
+            margin-bottom: 8px;
         }
         .form-group {
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 12px;
+            color: #555;
         }
-        input, select {
+        .input-row {
+            display: flex;
+            gap: 5px;
+        }
+        input {
             width: 100%;
-            padding: 10px;
+            padding: 8px 10px;
             box-sizing: border-box;
             border: 1px solid #ccc;
             border-radius: 6px;
             font-size: 14px;
         }
-        #map {
-            width: 100%;
-            height: 200px;
+        .action-btn {
+            padding: 8px 12px;
+            border: none;
             border-radius: 6px;
-            margin-top: 10px;
-            margin-bottom: 15px;
-        }
-        .price-box {
-            background: #e8f4fd;
-            padding: 12px;
-            border-radius: 6px;
-            text-align: center;
-            font-size: 16px;
             font-weight: bold;
-            color: #2980b9;
-            margin-bottom: 15px;
+            font-size: 12px;
+            color: white;
+            cursor: pointer;
+            white-space: nowrap;
         }
-        button {
+        .btn-from {
+            background-color: #3498db;
+        }
+        .btn-to {
+            background-color: #95a5a6;
+        }
+        .gps-btn {
+            width: 100%;
+            background-color: #e67e22;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        .submit-btn {
             background-color: #27ae60;
             color: white;
             border: none;
             padding: 12px;
             width: 100%;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-        }
-        button:hover {
-            background-color: #219653;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
 
-    <h2>Замовити Таксі</h2>
-
-    <div class="form-group">
-        <label for="address_from">Звідки (Адреса або точка):</label>
-        <input type="text" id="address_from" placeholder="Введіть вулицю або натисніть на карту" value="Кобеляки, центр">
-    </div>
-
-    <div class="form-group">
-        <label for="address_to">Куди (Пункт призначення):</label>
-        <input type="text" id="address_to" placeholder="Введіть село, місто або адресу призначення">
-    </div>
-
-    <div class="form-group">
-        <label for="phone">Номер телефону:</label>
-        <input type="tel" id="phone" placeholder="+380XXXXXXXXX">
-    </div>
-
+    <div class="instruction" id="mapInstruction">👉 Оберіть на мапі точку ВІДКРИТТЯ (Звідки)</div>
     <div id="map"></div>
 
-    <div class="price-box" id="priceDisplay">
-        Розрахунок вартості...
+    <div class="form-group">
+        <label>📞 Ваш номер телефону</label>
+        <input type="tel" id="phone" placeholder="0955331538">
     </div>
 
-    <button id="submitBtn">🚗 Замовити таксі</button>
+    <div class="form-group">
+        <label>📍 Звідки забирати?</label>
+        <div class="input-row">
+            <input type="text" id="address_from" placeholder="Вулиця, будинок або орієнтир">
+            <button type="button" class="action-btn btn-from" id="setFromBtn">Ар. Звідки</button>
+        </div>
+    </div>
 
-    <!-- Leaflet JS для роботи з картами та відстанню -->
+    <div class="form-group">
+        <label>🏁 Куди їдемо?</label>
+        <div class="input-row">
+            <input type="text" id="address_to" placeholder="Пункт призначення">
+            <button type="button" class="action-btn btn-to" id="setToBtn">Ар. Куди</button>
+        </div>
+    </div>
+
+    <button type="button" class="gps-btn" id="gpsBtn">📍 Визначити моє положення (GPS)</button>
+
+    <button type="button" class="submit-btn" id="submitBtn">Підтвердити замовлення</button>
+
+    <!-- Leaflet JS для роботи з картами -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
@@ -106,126 +132,101 @@
         const centerLat = 49.1435;
         const centerLng = 34.2015;
 
-        // Фіксовані тарифи для населених пунктів
-        const fixedTariffs = {
-            "бутенки": 350,
-            "мідянівка": 240,
-            "білики": 350,
-            "орлик": 1000,
-            "жуки": 450,
-            "придніпрянське": 1300,
-            "радянське": 1300,
-            "полтава": 1500,
-            "дніпро": 2700,
-            "світлогірськ": 1000,
-            "василівка": 550,
-            "миколаївка": 500,
-            "бродщина": 500,
-            "красне": 250,
-            "кунівка": 200,
-            "ганжівка": 200,
-            "ліщинівка": 250,
-            "галі": 300,
-            "вільховатка": 650,
-            "деменки": 670,
-            "дашківка": 700,
-            "сухинівка": 350,
-            "шенгури": 500,
-            "перегонівка": 450,
-            "гарбузівка": 400,
-            "соснівка": 400,
-            "гайове": 300,
-            "рубани": 550,
-            "дрижина": 550,
-            "марківка": 550,
-            "трояни": 500,
-            "вітрова балка": 500
-        };
-
-        // Ініціалізація карти
-        const map = L.map('map').setView([centerLat, centerLng], 13);
+        const map = L.map('map').setView([centerLat, centerLng], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
         }).addTo(map);
 
-        let marker = L.marker([centerLat, centerLng]).addTo(map);
+        let marker = L.marker([centerLat, centerLng], {draggable: true}).addTo(map);
+        
+        let selectingMode = 'from'; // 'from' або 'to'
 
-        function calculatePrice(destText) {
-            let cleanText = destText.toLowerCase().trim();
-            let price = 100;
-            let priceDesc = "По місту / До 2.5 км";
-
-            // Перевірка на наявність фіксованого тарифу за ключовим словом
-            let foundFixed = false;
-            for (let village in fixedTariffs) {
-                if (cleanText.includes(village)) {
-                    price = fixedTariffs[village];
-                    priceDesc = `Фіксований тариф (${village.charAt(0).toUpperCase() + village.slice(1)})`;
-                    foundFixed = true;
-                    break;
-                }
+        function updateInstruction() {
+            const instr = document.getElementById('mapInstruction');
+            if (selectingMode === 'from') {
+                instr.innerText = "👉 Оберіть на мапі точку ВІДКРИТТЯ (Звідки)";
+                instr.style.color = "#3498db";
+            } else {
+                instr.innerText = "👉 Оберіть на мапі точку ПРИЗНАЧЕННЯ (Куди)";
+                instr.style.color = "#e67e22";
             }
-
-            if (!foundFixed) {
-                // Приблизний розрахунок відстані від центру (якщо немає у фіксованих)
-                // Для точності можна прив'язати координати або рахувати за замовчуванням
-                let distance = 3.5; // Умовна відстань для прикладу розрахунку поза містом
-                let baseDistance = 2.5; // Базова зона 2.5 км
-                let basePrice = 100;
-                let perKmRate = 25;
-
-                if (distance <= baseDistance) {
-                    price = basePrice;
-                    priceDesc = "По місту / До 2.5 км";
-                } else {
-                    let extraKm = distance - baseDistance;
-                    price = basePrice + Math.round(extraKm * perKmRate);
-                    priceDesc = `За містом (~${Math.round(distance)} км)`;
-                }
-            }
-
-            // Перевірка на нічний тариф (23:50 – 05:00) з множником x2
-            const now = new Date();
-            const hours = now.getHours();
-            const minutes = now.getMinutes();
-            const currentTimeMins = hours * 60 + minutes;
-            const nightStart = 23 * 60 + 50; // 23:50
-            const nightEnd = 5 * 60;       // 05:00
-
-            if (currentTimeMins >= nightStart || currentTimeMins < nightEnd) {
-                price *= 2;
-                priceDesc += " (Нічний тариф x2)";
-            }
-
-            document.getElementById('priceDisplay').innerText = `Вартість: ${price} грн (${priceDesc})`;
-            return { price, priceDesc };
         }
 
-        document.getElementById('address_to').addEventListener('input', function() {
-            calculatePrice(this.value);
+        document.getElementById('setFromBtn').addEventListener('click', function() {
+            selectingMode = 'from';
+            updateInstruction();
         });
 
-        // Початковий розрахунок
-        calculatePrice("");
+        document.getElementById('setToBtn').addEventListener('click', function() {
+            selectingMode = 'to';
+            updateInstruction();
+        });
+
+        map.on('click', function(e) {
+            marker.setLatLng(e.latlng);
+            let lat = e.latlng.lat.toFixed(4);
+            let lon = e.latlng.lng.toFixed(4);
+            let pointText = `Точка на мапі (${lat}, ${lon})`;
+
+            if (selectingMode === 'from') {
+                document.getElementById('address_from').value = pointText;
+            } else {
+                document.getElementById('address_to').value = pointText;
+            }
+        });
+
+        marker.on('dragend', function(e) {
+            let pos = marker.getLatLng();
+            let lat = pos.lat.toFixed(4);
+            let lon = pos.lng.toFixed(4);
+            let pointText = `Точка на мапі (${lat}, ${lon})`;
+
+            if (selectingMode === 'from') {
+                document.getElementById('address_from').value = pointText;
+            } else {
+                document.getElementById('address_to').value = pointText;
+            }
+        });
+
+        document.getElementById('gpsBtn').addEventListener('click', function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    let lat = position.coords.latitude;
+                    let lon = position.coords.longitude;
+                    let latLng = [lat, lon];
+                    map.setView(latLng, 16);
+                    marker.setLatLng(latLng);
+                    
+                    let pointText = `GPS (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+                    if (selectingMode === 'from') {
+                        document.getElementById('address_from').value = pointText;
+                    } else {
+                        document.getElementById('address_to').value = pointText;
+                    }
+                }, function() {
+                    alert('Не вдалося отримати геолокацію.');
+                });
+            } else {
+                alert('Геолокація не підтримується вашим пристроєм.');
+            }
+        });
 
         document.getElementById('submitBtn').addEventListener('click', function() {
             const addressFrom = document.getElementById('address_from').value;
             const addressTo = document.getElementById('address_to').value;
             const phone = document.getElementById('phone').value;
 
-            if (!addressTo || !phone) {
-                alert('Будь ласка, введіть пункт призначення та номер телефону!');
+            if (!addressFrom || !addressTo || !phone) {
+                alert('Будь ласка, заповніть номер телефону, точку "Звідки" та "Куди"!');
                 return;
             }
-
-            const calculation = calculatePrice(addressTo);
 
             const orderData = {
                 address_from: addressFrom,
                 address_to: addressTo,
                 phone: phone,
-                price: calculation.price,
-                price_desc: calculation.priceDesc
+                price: 100, // базово або за вашими розрахунками
+                price_desc: "По місту"
             };
 
             tg.sendData(JSON.stringify(orderData));
