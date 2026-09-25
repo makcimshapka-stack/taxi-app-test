@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <title>Замовлення Таксі - Кобеляки</title>
+    <!-- Підключення Leaflet CSS для карти -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -44,7 +43,7 @@
             display: flex;
             gap: 5px;
         }
-        input {
+        input, select {
             width: 100%;
             padding: 7px 10px;
             box-sizing: border-box;
@@ -120,20 +119,33 @@
         </div>
     </div>
 
+    <div class="form-group">
+        <label for="payment_method">💳 Спосіб оплати:</label>
+        <select id="payment_method">
+            <option value="Готівка">💵 Готівка</option>
+            <option value="Картка">💳 Картка</option>
+        </select>
+    </div>
+
     <button type="button" class="gps-btn" id="gpsBtn">📍 Визначити моє положення (GPS)</button>
     <button type="button" class="submit-btn" id="submitBtn">Підтвердити замовлення</button>
 
+    <!-- Leaflet JS для роботи з картами -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
+        // Центр Кобеляк
         const centerLat = 49.1435;
         const centerLng = 34.2015;
 
         const map = L.map('map').setView([centerLat, centerLng], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/*.png', {
+        
+        // Виправлене посилання на тайли карти OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
         let marker = L.marker([centerLat, centerLng], {draggable: true}).addTo(map);
@@ -213,6 +225,7 @@
             const addressFrom = document.getElementById('address_from').value;
             const addressTo = document.getElementById('address_to').value;
             const phone = document.getElementById('phone').value;
+            const paymentMethod = document.getElementById('payment_method').value;
 
             if (!addressFrom || !addressTo || !phone) {
                 alert('Будь ласка, заповніть номер телефону, точку "Звідки" та "Куди"!');
@@ -223,6 +236,7 @@
                 address_from: addressFrom,
                 address_to: addressTo,
                 phone: phone,
+                payment_method: paymentMethod,
                 price: 100,
                 price_desc: "По місту"
             };
