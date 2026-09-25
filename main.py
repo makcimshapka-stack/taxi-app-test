@@ -3,27 +3,20 @@ import logging
 import asyncio
 from aiogram import Bot, Dispatcher, types
 
-# Ваш реальний токен бота
 API_TOKEN = '8817022184:AAGD3M8scpb6U7Ndwa4N4RlO0jLj1PTpkw4'
-
-# Ваш реальний ID чату водіїв
 DRIVER_CHAT_ID = -1005044058539
 
-# Словник з картками водіїв
 DRIVER_CARDS = {
     "Макс": "4874070013052004",
     "Артур": "4441114417805692"
 }
 
-# ПОТОЧНИЙ ВОДІЙ (змініть на "Артур", коли зміну бере Артур)
 CURRENT_DRIVER = "Макс"
 
 logging.basicConfig(level=logging.INFO)
-
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
-# Команда /start для відкриття WebApp
 @dp.message(lambda message: message.text and message.text.startswith('/start'))
 async def send_welcome(message: types.Message):
     markup = types.InlineKeyboardMarkup(
@@ -36,13 +29,11 @@ async def send_welcome(message: types.Message):
             ]
         ]
     )
-    
     await message.answer(
         "👋 Вітаємо у службі таксі Кобеляки!\nНатисніть кнопку нижче, щоб відкрити карту та оформити замовлення:",
         reply_markup=markup
     )
 
-# Отримання даних із WebApp (index.html)
 @dp.message(lambda message: message.web_app_data is not None)
 async def handle_web_app_data(message: types.Message):
     try:
@@ -55,7 +46,10 @@ async def handle_web_app_data(message: types.Message):
         price = data.get('price', 100)
         price_desc = data.get('price_desc', '')
 
-        # Формуємо повідомлення для водіїв
+        # Сповіщаємо клієнта, що пошук почався
+        await message.answer("⏳ **Очікуйте, передаємо замовлення водіям...**", parse_mode="Markdown")
+
+        # Формуємо текст для водіїв
         order_text = (
             f"🚨 **НОВЕ ЗАМОВЛЕННЯ ТАКСІ!** 🚨\n\n"
             f"📍 **Звідки:** {address_from}\n"
@@ -63,37 +57,54 @@ async def handle_web_app_data(message: types.Message):
             f"📞 **Телефон клієнта:** `{phone}`\n"
             f"💳 **Оплата:** {payment_method}\n"
             f"💰 **Вартість:** {price} грн _{price_desc}_\n"
-            f"🚗 **Водій на зміні:** {CURRENT_DRIVER}"
-        )
-
-        # Якщо клієнт обрав оплату карткою, додаємо номер картки поточного водія
-        if payment_method == 'Картка':
-            card_num = DRIVER_CARDS.get(CURRENT_DRIVER, "4874070013052004")
-            order_text += f"\n\n💳 **Реквізити для оплати карткою:**\n`{card_num}`"
-
-        # 1. Надсилаємо підтвердження клієнту
-        client_reply = (
-            f"✅ **Ваше замовлення прийнято в роботу!**\n\n"
-            f"📍 **Звідки:** {address_from}\n"
-            f"🏁 **Куди:** {address_to}\n"
-            f"💰 **Сума до сплати:** {price} грн ({payment_method})"
         )
         if payment_method == 'Картка':
             card_num = DRIVER_CARDS.get(CURRENT_DRIVER, "4874070013052004")
-            client_reply += f"\n\n💳 **Номер картки для оплати:**\n`{card_num}`"
+            order_text += f"💳 Картка для оплати: `{card_num}`\n"
 
-        await message.answer(client_reply, parse_mode="Markdown")
+        # Кнопка для водія, щоб прийняти замовлення
+        markup = types.InlineKeyboardMarkup(
+            inline_keyboard=[
+                [types.InlineKeyboardButton(text="🚗 Взяти замовлення", callback_data=f"accept_{message.from_user.id}_{price}_{payment_method}")]
+            ]
+        )
 
-        # 2. Намагаємося надіслати в чат водіїв
-        try:
-            await bot.send_message(DRIVER_CHAT_ID, order_text, parse_mode="Markdown")
-            print("✅ Замовлення успішно відправлено у чат водіїв!")
-        except Exception as err:
-            print(f"❌ ПОМИЛКА відправки у чат водіїв: {err}")
+        # Відправляємо у чат водіїв
+        await bot.send_message(DRIVER_CHAT_ID, order_text, reply_markup=markup, parse_mode="Markdown")
 
     except Exception as e:
-        logging.error(f"Помилка обробки замовлення: {e}")
-        await message.answer("❌ Сталася помилка при оформленні замовлення. Спробуйте ще раз.")
+        logging.error(f"Помилка: {e}")
+        await message.answer("❌ Сталася помилка при оформленні замовлення.")
+
+# Обробка натискання кнопки водієм
+@dp.callback_query(lambda c: c.data.startswith('accept_'))
+async def process_accept(callback: types.CallbackQuery):
+    parts = callback.data.split('_')
+    client_id = int(parts[1])
+    price = parts[2]
+    payment_method = parts[3]
+    
+    driver_name = callback.from_user.first_name or "Водій"
+    card_num = DRIVER_CARDS.get(driver_name, DRIVER_CARDS["Макс"])
+
+    # Оновлюємо повідомлення в чаті водіїв (щоб інші бачили, хто взяв)
+    await callback.message.edit_text(
+        callback.message.text + f"\n\n✅ **Замовлення прийняв(ла): {driver_name}**",
+        reply_markup=None,
+        parse_mode="Markdown"
+    )
+
+    # Відправляємо підтвердження клієнту
+    client_reply = (
+        f"✅ **Ваше замовлення прийнято в роботу!**\n\n"
+        f"🚗 **Водій:** {driver_name}\n"
+        f"💰 **Сума до сплати:** {price} грн ({payment_method})"
+    )
+    if payment_method == 'Картка':
+        client_reply += f"\n\n💳 **Номер картки для оплати:**\n`{card_num}`"
+
+    await bot.send_message(client_id, client_reply, parse_mode="Markdown")
+    await callback.answer("Ви успішно прийняли замовлення!")
 
 async def main():
     await bot.delete_webhook(drop_pending_updates=True)
