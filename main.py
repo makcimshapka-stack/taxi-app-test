@@ -11,7 +11,7 @@ DRIVER_GROUP_ID = -5044058539
 # 🚗 БАЗА ДАНИХ АВТОМОБІЛІВ ВОДІЇВ
 DRIVER_CARS = {
     "artur_grek4": "Renault (ВІ1393НР)",
-    "suetolog_mak": "Honda (Ві8926ЕР)"
+    "suetolog_mak": "Автомобіль (ВІ8926ЕР)"
 }
 
 bot = Bot(token=TOKEN)
@@ -34,15 +34,11 @@ async def handle_web_app_data(message: types.Message):
         price_desc = data.get('price_desc', '')
         phone = data.get('phone', '')
 
-        price_full = f"{price} грн"
-        if price_desc:
-            price_full += f" ({price_desc})"
-
         order_text = (
             f"🚨 <b>НОВЕ ЗАМОВЛЕННЯ ТАКСІ</b> 🚨\n\n"
             f"📍 <b>Звідки:</b> {addr_from}\n"
             f"🏁 <b>Куди:</b> {addr_to}\n"
-            f"💰 <b>Вартість:</b> {price_full}\n"
+            f"💰 <b>Вартість:</b> {price} грн ({price_desc})\n"
             f"📞 <b>Телефон:</b> {phone}\n"
             f"👤 <b>Клієнт:</b> {client_name} (ID: {client_chat_id})"
         )
@@ -60,11 +56,7 @@ async def handle_web_app_data(message: types.Message):
             reply_markup=builder.as_markup()
         )
 
-        active_orders[sent_message.message_id] = {
-            "client_chat_id": client_chat_id,
-            "price": price_full
-        }
-
+        active_orders[sent_message.message_id] = client_chat_id
         await message.answer("⏳ Очікуйте, шукаємо вільне авто...")
 
     except Exception as e:
@@ -81,14 +73,15 @@ async def accept_order_callback(callback: types.CallbackQuery):
     driver_name = driver_user.first_name or "Водій"
     driver_username = driver_user.username.lower() if driver_user.username else ""
     
+    # Отримуємо авто водія з бази за його username
     car_info = DRIVER_CARS.get(driver_username, "Автомобіль уточнюється")
-    order_info = active_orders.get(callback.message.message_id, {})
-    price_str = order_info.get("price", "Уточнюється")
 
     try:
+        # Беремо оригінальний текст замовлення з повідомлення у групі (без старого статусу, якщо він був)
         base_text = callback.message.html_text.split("\n\n✅ <b>Статус:</b>")[0]
         updated_text = f"{base_text}\n\n✅ <b>Статус:</b> Замовлення прийняв водій {driver_name} ({car_info})"
         
+        # Оновлюємо повідомлення в групі водіїв (прибираємо кнопку та додаємо статус)
         await bot.edit_message_text(
             chat_id=callback.message.chat.id,
             message_id=callback.message.message_id,
@@ -97,13 +90,13 @@ async def accept_order_callback(callback: types.CallbackQuery):
             reply_markup=None
         )
 
+        # Надсилаємо клієнту сповіщення із деталями авто як на скріншоті
         await bot.send_message(
             chat_id=client_chat_id,
             text=(
                 f"✅ <b>Ваше замовлення прийнято в роботу!</b>\n\n"
                 f"🚗 <b>Водій:</b> {driver_name}\n"
-                f"🚘 <b>Автомобіль:</b> {car_info}\n"
-                f"💰 <b>Вартість:</b> {price_str}\n\n"
+                f"🚘 <b>Автомобіль:</b> {car_info}\n\n"
                 f"Очікуйте на автомобіль поруч із місцем посадки."
             ),
             parse_mode="HTML"
