@@ -6,8 +6,8 @@ from aiogram.utils import executor
 # Токен вашого Telegram-бота
 API_TOKEN = 'СТАВТЕ_СВІЙ_БОТ_ТОКЕН_ТУТ'
 
-# ID чату водіїв або куди надсилаються замовлення
-DRIVER_CHAT_ID = -1001234567890  # Замініть на реальний ID чату водіїв або ваш ID
+# Ваш реальний ID чату водіїв
+DRIVER_CHAT_ID = -5044058539
 
 # Словник з картками водіїв
 DRIVER_CARDS = {
@@ -26,7 +26,7 @@ dp = Dispatcher(bot)
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
     markup = types.InlineKeyboardMarkup()
-    # Кнопка відкриття міні-додатка (замініть посилання на ваше)
+    # Замініть посилання на адресу вашого сайту/хостингу, де лежить index.html
     web_app_info = types.WebAppInfo(url="https://ваш-сайт.com/index.html")
     markup.add(types.InlineKeyboardButton(text="🚗 Замовити таксі (Кобеляки)", web_app=web_app_info))
     
@@ -64,10 +64,7 @@ async def handle_web_app_data(message: types.Message):
             card_num = DRIVER_CARDS.get(CURRENT_DRIVER, "4874070013052004")
             order_text += f"\n\n💳 **Реквізити для оплати карткою:**\n`{card_num}`"
 
-        # Надсилаємо замовлення у чат водіїв (або назад клієнту)
-        await bot.send_message(DRIVER_CHAT_ID, order_text, parse_mode="Markdown")
-        
-        # Підтвердження клієнту в чат бота
+        # 1. Надсилаємо підтвердження клієнту
         client_reply = (
             f"✅ **Ваше замовлення прийнято в роботу!**\n\n"
             f"📍 **Звідки:** {address_from}\n"
@@ -79,6 +76,13 @@ async def handle_web_app_data(message: types.Message):
             client_reply += f"\n\n💳 **Номер картки для оплати:**\n`{card_num}`"
 
         await message.answer(client_reply, parse_mode="Markdown")
+
+        # 2. Намагаємося надіслати в чат водіїв і виводимо результат у термінал
+        try:
+            await bot.send_message(DRIVER_CHAT_ID, order_text, parse_mode="Markdown")
+            print("✅ Замовлення успішно відправлено у чат водіїв!")
+        except Exception as err:
+            print(f"❌ ПОМИЛКА відправки у чат водіїв (-5044058539): {err}")
 
     except Exception as e:
         logging.error(f"Помилка обробки замовлення: {e}")
