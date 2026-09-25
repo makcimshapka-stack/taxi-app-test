@@ -3,8 +3,8 @@ import logging
 import asyncio
 from aiogram import Bot, Dispatcher, types
 
-# Токен вашого Telegram-бота
-API_TOKEN = 'СТАВТЕ_СВІЙ_БОТ_ТОКЕН_ТУТ'
+# Ваш реальний токен бота
+API_TOKEN = '8817022184:AAGD3M8scpb6U7Ndwa4N4RlO0jLj1PTpkw4'
 
 # Ваш реальний ID чату водіїв
 DRIVER_CHAT_ID = -1005044058539
@@ -19,11 +19,12 @@ DRIVER_CARDS = {
 CURRENT_DRIVER = "Макс"
 
 logging.basicConfig(level=logging.INFO)
+
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
 # Команда /start для відкриття WebApp
-@dp.message(types.Message, lambda message: message.text and message.text.startswith('/start'))
+@dp.message(lambda message: message.text and message.text.startswith('/start'))
 async def send_welcome(message: types.Message):
     markup = types.InlineKeyboardMarkup(
         inline_keyboard=[
@@ -95,7 +96,6 @@ async def handle_web_app_data(message: types.Message):
         await message.answer("❌ Сталася помилка при оформленні замовлення. Спробуйте ще раз.")
 
 async def main():
-    # Очищуємо старі апдейти перед запуском і стартуємо поллінг
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
