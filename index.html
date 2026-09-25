@@ -88,6 +88,40 @@
         let fromMarker = null;
         let toMarker = null;
 
+        // Фіксовані ціни за напрямками
+        const fixedPrices = {
+            "бутенки": 350,
+            "білики": 350,
+            "орлик": 1000,
+            "жуки": 450,
+            "придніпрянське": 1300,
+            "полтава": 1500,
+            "дніпро": 2700,
+            "світлогірськ": 1000,
+            "василівка": 550,
+            "миколаївка": 500,
+            "бродщина": 500,
+            "красна": 250,
+            "кунівка": 200,
+            "ганжівка": 200,
+            "ліщинівка": 250,
+            "галі": 300,
+            "вільховатка": 650,
+            "деменки": 670,
+            "дашківка": 700,
+            "сухинівка": 350,
+            "шенгури": 500,
+            "перегонівка": 450,
+            "гарбузівка": 400,
+            "соснівка": 400,
+            "гайове": 300,
+            "рубани": 550,
+            "дрижина": 550,
+            "марківка": 550,
+            "трояни": 500,
+            "вітрова балка": 500
+        };
+
         window.onload = function() {
             let savedPhone = localStorage.getItem("taxi_user_phone");
             if (savedPhone) {
@@ -138,7 +172,7 @@
                     }),
                     draggable: true
                 }).addTo(map).bindPopup("Куди").openPopup();
-                reverseGeocode(lat, lng, 'addressTo');
+                reverseGeocode(lat, lng, 'addressTo', true);
             }
             calculatePrice();
         });
@@ -154,20 +188,36 @@
             return R * c;
         }
 
+        function checkFixedPriceByText(addressText) {
+            if (!addressText) return null;
+            let lowerText = addressText.toLowerCase();
+            for (let place in fixedPrices) {
+                if (lowerText.includes(place)) {
+                    return { name: place, price: fixedPrices[place] };
+                }
+            }
+            return null;
+        }
+
         function calculatePrice() {
             let basePrice = 100;
             let desc = "По місту Кобеляки";
 
-            if (toCoords) {
-                // Відстань від центру Кобеляк (49.1435, 34.2015)
+            let addressToText = document.getElementById('addressTo').value;
+            let fixedMatch = checkFixedPriceByText(addressToText);
+
+            if (fixedMatch) {
+                basePrice = fixedMatch.price;
+                let capitalizedName = fixedMatch.name.charAt(0).toUpperCase() + fixedMatch.name.slice(1);
+                desc = `Фіксована ціна (${capitalizedName})`;
+                if (fixedMatch.name === "дніпро") {
+                    desc = "Дніпро (від 2700)";
+                }
+            } else if (toCoords) {
                 let distFromCenter = getDistanceFromLatLonInKm(49.1435, 34.2015, toCoords.lat, toCoords.lng);
-                
-                // Перевірка на міст (умовно: якщо довгота або широта потрапляють на річки Ворскла / Кобелячка, 
-                // або призначення далі за східний/західний берег, наприклад західніше довготи 34.192)
                 let isAcrossBridge = (toCoords.lng < 34.193); 
 
                 if (distFromCenter > 1.0) {
-                    // За містом: 100 грн база + 25 грн за кожен км після 1 км
                     let extraKm = distFromCenter - 1.0;
                     basePrice = Math.round(100 + (extraKm * 25));
                     desc = `За містом (~${Math.round(distFromCenter)} км)`;
@@ -198,7 +248,7 @@
             document.getElementById('priceDesc').innerText = `Орієнтовно: ${desc}`;
         }
 
-        function reverseGeocode(lat, lng, elementId) {
+        function reverseGeocode(lat, lng, elementId, isToAddress = false) {
             fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
                 headers: { 'Accept-Language': 'uk' }
             })
@@ -211,11 +261,22 @@
                 } else {
                     document.getElementById(elementId).value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
                 }
+                if (isToAddress) {
+                    calculatePrice();
+                }
             })
             .catch(() => {
                 document.getElementById(elementId).value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                if (isToAddress) {
+                    calculatePrice();
+                }
             });
         }
+
+        // Слухач на введення тексту в поле "Куди", щоб ціна перераховувалась автоматично при ручному вводі назви села
+        document.getElementById('addressTo').addEventListener('input', function() {
+            calculatePrice();
+        });
 
         function useCurrentLocation() {
             if ("geolocation" in navigator) {
