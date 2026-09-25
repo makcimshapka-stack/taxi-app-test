@@ -8,6 +8,12 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 TOKEN = "8817022184:AAHXN8Y5JO4UQcoIpN6Dt_QOX-r7fSjfVgY"
 DRIVER_GROUP_ID = -5044058539
 
+# 🚗 БАЗА ДАНИХ АВТОМОБІЛІВ ВОДІЇВ (за їхніми Telegram username)
+DRIVER_CARS = {
+    "artur_grek4": "Renault (ВІ1393НР)",
+    "suetolog_mak": "Автомобіль (ВІ8926ЕР)"  # Марку за потреби можна змінити тут же
+}
+
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
@@ -62,11 +68,17 @@ async def handle_web_app_data(message: types.Message):
 async def accept_order_callback(callback: types.CallbackQuery):
     parts = callback.data.split("_")
     client_chat_id = int(parts[1])
-    driver_name = callback.from_user.first_name or "Водій"
+    
+    driver_user = callback.from_user
+    driver_name = driver_user.first_name or "Водій"
+    driver_username = driver_user.username.lower() if driver_user.username else ""
+    
+    # Шукаємо авто за Telegram username водія
+    car_info = DRIVER_CARS.get(driver_username, "Автомобіль уточнюється")
 
     try:
         original_text = callback.message.html_text
-        updated_text = f"{original_text}\n\n✅ <b>Статус:</b> Замовлення прийняв водій {driver_name}"
+        updated_text = f"{original_text}\n\n✅ <b>Статус:</b> Замовлення прийняв водій {driver_name} ({car_info})"
         
         await bot.edit_message_text(
             chat_id=callback.message.chat.id,
@@ -76,11 +88,14 @@ async def accept_order_callback(callback: types.CallbackQuery):
             reply_markup=None
         )
 
+        # Відправляємо клієнту інформацію про водія та його автомобіль
         await bot.send_message(
             chat_id=client_chat_id,
             text=(
                 f"✅ <b>Ваше замовлення прийнято!</b>\n\n"
-                f"🚗 Водій <b>{driver_name}</b> виїхав до Вас. Очікуйте автомобіль!"
+                f"🚗 Водій: <b>{driver_name}</b>\n"
+                f"🚘 Авто: <b>{car_info}</b>\n\n"
+                f"Водій виїхав до Вас. Очікуйте автомобіль!"
             ),
             parse_mode="HTML"
         )
