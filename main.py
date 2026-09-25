@@ -1,13 +1,13 @@
 import json
 import logging
+import asyncio
 from aiogram import Bot, Dispatcher, types
-from aiogram.utils import executor
 
 # Токен вашого Telegram-бота
 API_TOKEN = 'СТАВТЕ_СВІЙ_БОТ_ТОКЕН_ТУТ'
 
 # Ваш реальний ID чату водіїв
-DRIVER_CHAT_ID = -5044058539
+DRIVER_CHAT_ID = -1005044058539
 
 # Словник з картками водіїв
 DRIVER_CARDS = {
@@ -20,15 +20,21 @@ CURRENT_DRIVER = "Макс"
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
+dp = Dispatcher()
 
 # Команда /start для відкриття WebApp
-@dp.message_handler(commands=['start'])
+@dp.message(types.Message, lambda message: message.text and message.text.startswith('/start'))
 async def send_welcome(message: types.Message):
-    markup = types.InlineKeyboardMarkup()
-    # Замініть посилання на адресу вашого сайту/хостингу, де лежить index.html
-    web_app_info = types.WebAppInfo(url="https://ваш-сайт.com/index.html")
-    markup.add(types.InlineKeyboardButton(text="🚗 Замовити таксі (Кобеляки)", web_app=web_app_info))
+    markup = types.InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text="🚗 Замовити таксі (Кобеляки)",
+                    web_app=types.WebAppInfo(url="https://ваш-сайт.com/index.html")
+                )
+            ]
+        ]
+    )
     
     await message.answer(
         "👋 Вітаємо у службі таксі Кобеляки!\nНатисніть кнопку нижче, щоб відкрити карту та оформити замовлення:",
@@ -36,7 +42,7 @@ async def send_welcome(message: types.Message):
     )
 
 # Отримання даних із WebApp (index.html)
-@dp.message_handler(content_types=['web_app_data'])
+@dp.message(lambda message: message.web_app_data is not None)
 async def handle_web_app_data(message: types.Message):
     try:
         data = json.loads(message.web_app_data.data)
@@ -77,16 +83,21 @@ async def handle_web_app_data(message: types.Message):
 
         await message.answer(client_reply, parse_mode="Markdown")
 
-        # 2. Намагаємося надіслати в чат водіїв і виводимо результат у термінал
+        # 2. Намагаємося надіслати в чат водіїв
         try:
             await bot.send_message(DRIVER_CHAT_ID, order_text, parse_mode="Markdown")
             print("✅ Замовлення успішно відправлено у чат водіїв!")
         except Exception as err:
-            print(f"❌ ПОМИЛКА відправки у чат водіїв (-5044058539): {err}")
+            print(f"❌ ПОМИЛКА відправки у чат водіїв: {err}")
 
     except Exception as e:
         logging.error(f"Помилка обробки замовлення: {e}")
         await message.answer("❌ Сталася помилка при оформленні замовлення. Спробуйте ще раз.")
 
+async def main():
+    # Очищуємо старі апдейти перед запуском і стартуємо поллінг
+    await bot.delete_webhook(drop_pending_updates=True)
+    await dp.start_polling(bot)
+
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+    asyncio.run(main())
