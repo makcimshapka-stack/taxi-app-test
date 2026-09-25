@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Замовлення Таксі - Кобеляки</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body, html { width: 100%; height: 100%; background: #f5f5f5; overflow: hidden; }
+        #map { width: 100%; height: 45vh; }
+        .panel { position: absolute; bottom: 0; left: 0; width: 100%; height: 55vh; background: #fff; border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 15px 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; overflow-y: auto; }
+        .input-group { margin-bottom: 8px; }
+        .input-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 2px; color: #777; }
+        .input-row { display: flex; gap: 6px; }
+        .input-group input { width: 100%; padding: 9px 12px; border: 1px solid #ccc; border-radius: 10px; font-size: 14px; outline: none; }
+        .input-group input:focus { border-color: #2481cc; }
+        .action-btn { background: #e0e0e0; border: none; border-radius: 10px; padding: 0 12px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .action-btn.active { background: #2481cc; color: #fff; }
+        .geo-btn { width: 100%; background: #f0f0f0; border: 1px solid #ddd; border-radius: 8px; padding: 7px; font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 8px; color: #333; text-align: center; }
+        .order-btn { width: 100%; padding: 12px; background-color: #2ea44f; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .map-hint { font-size: 11px; color: #e67e22; text-align: center; margin-bottom: 4px; font-weight: bold; min-height: 15px; }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <div class="panel">
+        <div>
+            <div class="map-hint" id="mapHint">📍 Клікніть на карту або введіть адресу нижче</div>
+
+            <div class="input-group">
+                <label for="phone">📞 Ваш номер телефону</label>
+                <input type="tel" id="phone" placeholder="+380XXXXXXXXX">
+            </div>
+
+            <div class="input-group">
+                <label for="addressFrom">📍 Звідки забирати?</label>
+                <div class="input-row">
+                    <input type="text" id="addressFrom" placeholder="Вулиця, будинок або орієнтир">
+                    <button type="button" class="action-btn" id="setFromBtn" onclick="setMode('from')">Ар. Звідки</button>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label for="addressTo">🏁 Куди їдемо?</label>
+                <div class="input-row">
+                    <input type="text" id="addressTo" placeholder="Пункт призначення">
+                    <button type="button" class="action-btn" id="setToBtn" onclick="setMode('to')">Ар. Куди</button>
+                </div>
+            </div>
+
+            <button type="button" class="geo-btn" onclick="useCurrentLocation()">📍 Визначити моє положення (GPS)</button>
+        </div>
+
+        <button class="order-btn" onclick="submitOrder()">Підтвердити замовлення</button>
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        let currentMode = 'from';
+        let fromCoords = null;
+        let toCoords = null;
+
+        const kobelyakyCoords = [49.1435, 34.2015];
+        const map = L.map('map').setView(kobelyakyCoords, 14);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        let fromMarker = null;
+        let toMarker = null;
+
+        window.onload = function() {
+            let savedPhone = localStorage.getItem("taxi_user_phone");
+            if (savedPhone) {
+                document.getElementById('phone').value = savedPhone;
+            }
+            updateModeUI();
+        };
+
+        function setMode(mode) {
+            currentMode = mode;
+            updateModeUI();
+        }
+
+        function updateModeUI() {
+            const hint = document.getElementById('mapHint');
+            const btnFrom = document.getElementById('setFromBtn');
+            const btnTo = document.getElementById('setToBtn');
+
+            if (currentMode === 'from') {
+                hint.innerText = "👉 Оберіть на мапі точку ВІДКРИТТЯ (Звідки)";
+                btnFrom.classList.add('active');
+                btnTo.classList.remove('active');
+            } else {
+                hint.innerText = "👉 Оберіть на мапі точку ПРИЗНАЧЕННЯ (Куди)";
+                btnTo.classList.add('active');
+                btnFrom.classList.remove('active');
+            }
+        }
+
+        map.on('click', function(e) {
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+
+            if (currentMode === 'from') {
+                fromCoords = {lat, lng};
+                if (fromMarker) map.removeLayer(fromMarker);
+                fromMarker = L.marker([lat, lng], {draggable: true}).addTo(map)
+                    .bindPopup("Звідки").openPopup();
+                
+                reverseGeocode(lat, lng, 'addressFrom');
+            } else {
+                toCoords = {lat, lng};
+                if (toMarker) map.removeLayer(toMarker);
+                toMarker = L.marker([lat, lng], {
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.4/images/marker-shadow.png',
+                        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                    }),
+                    draggable: true
+                }).addTo(map).bindPopup("Куди").openPopup();
+                
+                reverseGeocode(lat, lng, 'addressTo');
+            }
+        });
+
+        function reverseGeocode(lat, lng, elementId) {
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+                headers: { 'Accept-Language': 'uk' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.display_name) {
+                    let parts = data.display_name.split(',');
+                    let shortAddress = parts.slice(0, 3).join(',').trim();
+                    document.getElementById(elementId).value = shortAddress;
+                } else {
+                    document.getElementById(elementId).value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                }
+            })
+            .catch(() => {
+                document.getElementById(elementId).value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            });
+        }
+
+        function useCurrentLocation() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    map.setView([lat, lng], 16);
+                    currentMode = 'from';
+                    
+                    fromCoords = {lat, lng};
+                    if (fromMarker) map.removeLayer(fromMarker);
+                    fromMarker = L.marker([lat, lng]).addTo(map).bindPopup("Я тут").openPopup();
+                    
+                    reverseGeocode(lat, lng, 'addressFrom');
+                }, function(error) {
+                    alert("Не вдалося отримати геолокацію. Увімкніть GPS на телефоні.");
+                }, {enableHighAccuracy: true});
+            } else {
+                alert("Ваш браузер не підтримує геолокацію.");
+            }
+        }
+
+        function submitOrder() {
+            const phone = document.getElementById('phone').value.trim();
+            const addressFrom = document.getElementById('addressFrom').value.trim();
+            const addressTo = document.getElementById('addressTo').value.trim();
+
+            if (!phone || phone.length < 9) {
+                alert("Будь ласка, введіть номер телефону!");
+                return;
+            }
+
+            if (!addressFrom) {
+                alert("Вкажіть адресу відправлення (Звідки)!");
+                return;
+            }
+
+            if (!addressTo) {
+                alert("Вкажіть пункт призначення (Куди)!");
+                return;
+            }
+
+            localStorage.setItem("taxi_user_phone", phone);
+
+            const orderData = {
+                phone: phone,
+                address_from: addressFrom,
+                address_to: addressTo,
+                lat: fromCoords ? fromCoords.lat : null,
+                lng: fromCoords ? fromCoords.lng : null
+            };
+
+            if (window.Telegram && window.Telegram.WebApp) {
+                tg.sendData(JSON.stringify(orderData));
+            } else {
+                alert("Помилка: відкривайте цей додаток через Telegram!");
+            }
+        }
+    </script>
+</body>
+</html>
