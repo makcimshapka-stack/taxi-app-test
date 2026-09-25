@@ -4,7 +4,7 @@ import asyncio
 from aiogram import Bot, Dispatcher, types
 
 API_TOKEN = '8817022184:AAGD3M8scpb6U7Ndwa4N4RlO0jLj1PTpkw4'
-DRIVER_CHAT_ID = -1005044058539
+DRIVER_CHAT_ID = -5044058539
 
 DRIVER_CARDS = {
     "Макс": "4874070013052004",
