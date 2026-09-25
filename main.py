@@ -8,16 +8,10 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 TOKEN = "8817022184:AAHXN8Y5JO4UQcoIpN6Dt_QOX-r7fSjfVgY"
 DRIVER_GROUP_ID = -5044058539
 
-# 🚗 БАЗА ДАНИХ АВТОМОБІЛІВ ТА КАРТОК ВОДІЇВ
-DRIVER_INFO = {
-    "artur_grek4": {
-        "car": "Renault (ВІ1393НР)",
-        "card": "4441114417805692"
-    },
-    "suetolog_mak": {
-        "car": "Honda (Ві8926ЕР)",
-        "card": "4874070013052004"
-    }
+# 🚗 БАЗА ДАНИХ АВТОМОБІЛІВ ВОДІЇВ
+DRIVER_CARS = {
+    "artur_grek4": "Renault (ВІ1393НР)",
+    "suetolog_mak": "Honda (Ві8926ЕР)"
 }
 
 bot = Bot(token=TOKEN)
@@ -90,10 +84,7 @@ async def accept_order_callback(callback: types.CallbackQuery):
     driver_name = driver_user.first_name or "Водій"
     driver_username = driver_user.username.lower() if driver_user.username else ""
     
-    driver_data = DRIVER_INFO.get(driver_username, {"car": "Автомобіль уточнюється", "card": "Уточнюється"})
-    car_info = driver_data["car"]
-    card_number = driver_data["card"]
-
+    car_info = DRIVER_CARS.get(driver_username, "Автомобіль уточнюється")
     order_info = active_orders.get(callback.message.message_id, {})
     price_str = order_info.get("price", "Уточнюється")
     payment_method = order_info.get("payment_method", "Готівка")
@@ -110,22 +101,16 @@ async def accept_order_callback(callback: types.CallbackQuery):
             reply_markup=None
         )
 
-        client_msg = (
-            f"✅ <b>Ваше замовлення прийнято в роботу!</b>\n\n"
-            f"🚗 <b>Водій:</b> {driver_name}\n"
-            f"🚘 <b>Автомобіль:</b> {car_info}\n"
-            f"💰 <b>Вартість:</b> {price_str}\n"
-            f"💳 <b>Оплата:</b> {payment_method}\n"
-        )
-
-        if payment_method == "Картка":
-            client_msg += f"\n💳 <b>Номер картки для оплати:</b>\n<code>{card_number}</code>\n"
-
-        client_msg += "\nОчікуйте на автомобіль поруч із місцем посадки."
-
         await bot.send_message(
             chat_id=client_chat_id,
-            text=client_msg,
+            text=(
+                f"✅ <b>Ваше замовлення прийнято в роботу!</b>\n\n"
+                f"🚗 <b>Водій:</b> {driver_name}\n"
+                f"🚘 <b>Автомобіль:</b> {car_info}\n"
+                f"💰 <b>Вартість:</b> {price_str}\n"
+                f"💳 <b>Оплата:</b> {payment_method}\n\n"
+                f"Очікуйте на автомобіль поруч із місцем посадки."
+            ),
             parse_mode="HTML"
         )
 
