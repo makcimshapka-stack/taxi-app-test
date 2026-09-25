@@ -16,7 +16,6 @@
             background-color: #f4f4f9;
             color: #333;
         }
-        /* Мапа тепер зверху */
         #map {
             width: 100%;
             height: 220px;
@@ -105,11 +104,11 @@
 </head>
 <body>
 
-    <!-- 1. МАПА ЗВЕРХУ -->
+    <!-- МАПА ЗВЕРХУ -->
     <div class="instruction" id="mapInstruction">👉 Оберіть на мапі точку ВІДКРИТТЯ (Звідки)</div>
     <div id="map"></div>
 
-    <!-- 2. ВСІ ЕЛЕМЕНТИ КЕРУВАННЯ ПІД МАПОЮ -->
+    <!-- ЕЛЕМЕНТИ КЕРУВАННЯ ПІД МАПОЮ -->
     <div class="form-group">
         <label>📞 Ваш номер телефону</label>
         <input type="tel" id="phone" placeholder="0955331538">
@@ -118,7 +117,7 @@
     <div class="form-group">
         <label>📍 Звідки забирати?</label>
         <div class="input-row">
-            <input type="text" id="address_from" value="Кобеляки, центр" placeholder="Вулиця або точка">
+            <input type="text" id="address_from" value="Кобеляки, центр" placeholder="Вулиця або орієнтир">
             <button type="button" class="action-btn btn-from" id="setFromBtn">Ар. Звідки</button>
         </div>
     </div>
@@ -126,7 +125,7 @@
     <div class="form-group">
         <label>🏁 Куди їдемо?</label>
         <div class="input-row">
-            <input type="text" id="address_to" placeholder="Пункт призначення">
+            <input type="text" id="address_to" placeholder="Пункт призначення (вулиця або село)">
             <button type="button" class="action-btn btn-to" id="setToBtn">Ар. Куди</button>
         </div>
     </div>
@@ -175,7 +174,7 @@
         }).addTo(map);
 
         let marker = L.marker([centerLat, centerLng], {draggable: true}).addTo(map);
-        let selectingMode = 'from'; // Режим вибору: 'from' або 'to'
+        let selectingMode = 'from';
 
         function updateInstruction() {
             const instr = document.getElementById('mapInstruction');
@@ -201,6 +200,29 @@
             selectingMode = 'to';
             updateInstruction();
         });
+
+        // Функція для отримання назви вулиці за координатами через Nominatim
+        function getAddressFromLatLon(lat, lon, callback) {
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`, {
+                headers: { 'Accept-Language': 'uk' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.address) {
+                    let road = data.address.road || data.address.pedestrian || data.address.suburb || '';
+                    let houseNumber = data.address.house_number ? `, ${data.address.house_number}` : '';
+                    let city = data.address.city || data.address.town || data.address.village || data.address.county || 'Кобеляки';
+                    
+                    let fullAddress = road ? `${road}${houseNumber}, ${city}` : `${city}`;
+                    callback(fullAddress);
+                } else {
+                    callback(`Кобеляки (${lat.toFixed(4)}, ${lon.toFixed(4)})`);
+                }
+            })
+            .catch(() => {
+                callback(`Кобеляки (${lat.toFixed(4)}, ${lon.toFixed(4)})`);
+            });
+        }
 
         function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
             let R = 6371; 
@@ -257,19 +279,20 @@
             return { price, priceDesc };
         }
 
-        // Обробка кліку по мапі
+        // Клік по мапі
         map.on('click', function(e) {
-            marker.setLatLng(e.latlng);
             let lat = e.latlng.lat;
             let lon = e.latlng.lng;
-            let pointText = `Точка на карті (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+            marker.setLatLng([lat, lon]);
 
-            if (selectingMode === 'from') {
-                document.getElementById('address_from').value = pointText;
-            } else {
-                document.getElementById('address_to').value = pointText;
-                calculatePrice(pointText, lat, lon);
-            }
+            getAddressFromLatLon(lat, lon, function(addressText) {
+                if (selectingMode === 'from') {
+                    document.getElementById('address_from').value = addressText;
+                } else {
+                    document.getElementById('address_to').value = addressText;
+                    calculatePrice(addressText, lat, lon);
+                }
+            });
         });
 
         // Перетягування мітки
@@ -277,14 +300,15 @@
             let pos = marker.getLatLng();
             let lat = pos.lat;
             let lon = pos.lng;
-            let pointText = `Точка на карті (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
 
-            if (selectingMode === 'from') {
-                document.getElementById('address_from').value = pointText;
-            } else {
-                document.getElementById('address_to').value = pointText;
-                calculatePrice(pointText, lat, lon);
-            }
+            getAddressFromLatLon(lat, lon, function(addressText) {
+                if (selectingMode === 'from') {
+                    document.getElementById('address_from').value = addressText;
+                } else {
+                    document.getElementById('address_to').value = addressText;
+                    calculatePrice(addressText, lat, lon);
+                }
+            });
         });
 
         document.getElementById('address_to').addEventListener('input', function() {
@@ -292,7 +316,7 @@
             calculatePrice(this.value, pos.lat, pos.lng);
         });
 
-        // Кнопка геолокації GPS
+        // Кнопка GPS
         document.getElementById('gpsBtn').addEventListener('click', function() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
@@ -302,18 +326,19 @@
                     map.setView(latLng, 16);
                     marker.setLatLng(latLng);
                     
-                    let pointText = `GPS (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
-                    if (selectingMode === 'from') {
-                        document.getElementById('address_from').value = pointText;
-                    } else {
-                        document.getElementById('address_to').value = pointText;
-                        calculatePrice(pointText, lat, lon);
-                    }
+                    getAddressFromLatLon(lat, lon, function(addressText) {
+                        if (selectingMode === 'from') {
+                            document.getElementById('address_from').value = addressText;
+                        } else {
+                            document.getElementById('address_to').value = addressText;
+                            calculatePrice(addressText, lat, lon);
+                        }
+                    });
                 }, function() {
-                    alert('Не вдалося отримати геолокацію. Увімкніть GPS у налаштуваннях.');
+                    alert('Не вдалося отримати геолокацію. Увімкніть GPS.');
                 });
             } else {
-                alert('Геолокація не підтримується вашим пристроєм.');
+                alert('Геолокація не підтримується.');
             }
         });
 
