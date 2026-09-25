@@ -10,15 +10,13 @@ DRIVER_GROUP_ID = -5044058539
 
 # 🚗 БАЗА ДАНИХ АВТОМОБІЛІВ ТА КАРТОК ВОДІЇВ
 DRIVER_INFO = {
-    "suetolog_mak": {
-        "car": "Honda (Ві8926ЕР)",
-        "card": "4874070013052004",
-        "name": "Макс"
-    },
     "artur_grek4": {
         "car": "Renault (ВІ1393НР)",
-        "card": "4441114417805692",
-        "name": "Артур"
+        "card": "4441114417805692"
+    },
+    "suetolog_mak": {
+        "car": "Honda (Ві8926ЕР)",
+        "card": "4874070013052004"
     }
 }
 
@@ -89,15 +87,10 @@ async def accept_order_callback(callback: types.CallbackQuery):
     client_chat_id = int(parts[1])
     
     driver_user = callback.from_user
+    driver_name = driver_user.first_name or "Водій"
     driver_username = driver_user.username.lower() if driver_user.username else ""
     
-    driver_data = DRIVER_INFO.get(driver_username, {
-        "car": "Автомобіль уточнюється",
-        "card": "Уточнюється",
-        "name": driver_user.first_name or "Водій"
-    })
-
-    driver_name = driver_data["name"]
+    driver_data = DRIVER_INFO.get(driver_username, {"car": "Автомобіль уточнюється", "card": "Уточнюється"})
     car_info = driver_data["car"]
     card_number = driver_data["card"]
 
@@ -117,7 +110,6 @@ async def accept_order_callback(callback: types.CallbackQuery):
             reply_markup=None
         )
 
-        # Формування повідомлення для клієнта залежно від способу оплати
         client_msg = (
             f"✅ <b>Ваше замовлення прийнято в роботу!</b>\n\n"
             f"🚗 <b>Водій:</b> {driver_name}\n"
