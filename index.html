@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Замовлення Таксі</title>
-    <!-- Підключення Leaflet CSS для карти -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Замовлення Таксі - Кобеляки</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -17,25 +19,25 @@
         }
         #map {
             width: 100%;
-            height: 250px;
+            height: 220px;
             border-radius: 10px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .instruction {
             text-align: center;
             font-size: 13px;
             font-weight: bold;
             color: #b9770e;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         .form-group {
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         label {
             display: block;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 11px;
             color: #555;
         }
         .input-row {
@@ -44,18 +46,18 @@
         }
         input {
             width: 100%;
-            padding: 8px 10px;
+            padding: 7px 10px;
             box-sizing: border-box;
             border: 1px solid #ccc;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 13px;
         }
         .action-btn {
-            padding: 8px 12px;
+            padding: 7px 10px;
             border: none;
             border-radius: 6px;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 11px;
             color: white;
             cursor: pointer;
             white-space: nowrap;
@@ -71,24 +73,24 @@
             background-color: #e67e22;
             color: white;
             border: none;
-            padding: 8px;
+            padding: 7px;
             border-radius: 6px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: bold;
             cursor: pointer;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
         .submit-btn {
             background-color: #27ae60;
             color: white;
             border: none;
-            padding: 12px;
+            padding: 10px;
             width: 100%;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             cursor: pointer;
-            margin-top: 5px;
+            margin-top: 4px;
         }
     </style>
 </head>
@@ -119,27 +121,23 @@
     </div>
 
     <button type="button" class="gps-btn" id="gpsBtn">📍 Визначити моє положення (GPS)</button>
-
     <button type="button" class="submit-btn" id="submitBtn">Підтвердити замовлення</button>
 
-    <!-- Leaflet JS для роботи з картами -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Центр Кобеляк
         const centerLat = 49.1435;
         const centerLng = 34.2015;
 
         const map = L.map('map').setView([centerLat, centerLng], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/*.png', {
             maxZoom: 19,
         }).addTo(map);
 
         let marker = L.marker([centerLat, centerLng], {draggable: true}).addTo(map);
-        
-        let selectingMode = 'from'; // 'from' або 'to'
+        let selectingMode = 'from';
 
         function updateInstruction() {
             const instr = document.getElementById('mapInstruction');
@@ -207,7 +205,7 @@
                     alert('Не вдалося отримати геолокацію.');
                 });
             } else {
-                alert('Геолокація не підтримується вашим пристроєм.');
+                alert('Геолокація не підтримується.');
             }
         });
 
@@ -225,7 +223,7 @@
                 address_from: addressFrom,
                 address_to: addressTo,
                 phone: phone,
-                price: 100, // базово або за вашими розрахунками
+                price: 100,
                 price_desc: "По місту"
             };
 
