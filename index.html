@@ -18,19 +18,21 @@
         h2 {
             text-align: center;
             color: #2c3e50;
+            margin-top: 5px;
+            margin-bottom: 15px;
         }
         .form-group {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 13px;
         }
         input, select {
             width: 100%;
-            padding: 10px;
+            padding: 8px 10px;
             box-sizing: border-box;
             border: 1px solid #ccc;
             border-radius: 6px;
@@ -38,20 +40,20 @@
         }
         #map {
             width: 100%;
-            height: 200px;
+            height: 180px;
             border-radius: 6px;
-            margin-top: 10px;
-            margin-bottom: 15px;
+            margin-top: 8px;
+            margin-bottom: 10px;
         }
         .price-box {
             background: #e8f4fd;
-            padding: 12px;
+            padding: 10px;
             border-radius: 6px;
             text-align: center;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             color: #2980b9;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
         button {
             background-color: #27ae60;
@@ -156,9 +158,26 @@
             maxZoom: 19,
         }).addTo(map);
 
-        let marker = L.marker([centerLat, centerLng]).addTo(map);
+        let marker = L.marker([centerLat, centerLng], {draggable: true}).addTo(map);
 
-        function calculatePrice(destText) {
+        // Функція для розрахунку відстані між двома точками в кілометрах (формула гаверсинусів)
+        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+            let R = 6371; // Радіус Землі в км
+            let dLat = deg2rad(lat2 - lat1);
+            let dLon = deg2rad(lon2 - lon1);
+            let a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function deg2rad(deg) {
+            return deg * (Math.PI/180);
+        }
+
+        function calculatePrice(destText, lat = null, lon = null) {
             let cleanText = destText.toLowerCase().trim();
             let price = 100;
             let priceDesc = "По місту / До 2.5 км";
@@ -174,8 +193,14 @@
             }
 
             if (!foundFixed) {
-                let distance = 3.5; 
-                let baseDistance = 2.5; 
+                let distance = 0;
+                if (lat !== null && lon !== null) {
+                    distance = getDistanceFromLatLonInKm(centerLat, centerLng, lat, lon);
+                } else {
+                    distance = 3.5; // За замовчуванням, якщо координати не передані
+                }
+
+                let baseDistance = 2.5; // Базова зона 2.5 км
                 let basePrice = 100;
                 let perKmRate = 25;
 
@@ -189,6 +214,7 @@
                 }
             }
 
+            // Нічний тариф (23:50 – 05:00) x2
             const now = new Date();
             const hours = now.getHours();
             const minutes = now.getMinutes();
@@ -205,11 +231,29 @@
             return { price, priceDesc };
         }
 
-        document.getElementById('address_to').addEventListener('input', function() {
-            calculatePrice(this.value);
+        // Обробка кліку або переміщення мітки на карті
+        map.on('click', function(e) {
+            marker.setLatLng(e.latlng);
+            let lat = e.latlng.lat;
+            let lon = e.latlng.lng;
+            document.getElementById('address_to').value = `Точка на карті (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+            calculatePrice(document.getElementById('address_to').value, lat, lon);
         });
 
-        calculatePrice("");
+        marker.on('dragend', function(e) {
+            let pos = marker.getLatLng();
+            let lat = pos.lat;
+            let lon = pos.lng;
+            document.getElementById('address_to').value = `Точка на карті (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+            calculatePrice(document.getElementById('address_to').value, lat, lon);
+        });
+
+        document.getElementById('address_to').addEventListener('input', function() {
+            let pos = marker.getLatLng();
+            calculatePrice(this.value, pos.lat, pos.lng);
+        });
+
+        calculatePrice("", centerLat, centerLng);
 
         document.getElementById('submitBtn').addEventListener('click', function() {
             const addressFrom = document.getElementById('address_from').value;
@@ -222,7 +266,8 @@
                 return;
             }
 
-            const calculation = calculatePrice(addressTo);
+            let pos = marker.getLatLng();
+            const calculation = calculatePrice(addressTo, pos.lat, pos.lng);
 
             const orderData = {
                 address_from: addressFrom,
