@@ -17,7 +17,6 @@ DRIVER_CARS = {
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# Словник для зберігання деталей замовлень (включно з ціною)
 active_orders = {}
 
 @dp.message(F.web_app_data)
@@ -35,7 +34,6 @@ async def handle_web_app_data(message: types.Message):
         price_desc = data.get('price_desc', '')
         phone = data.get('phone', '')
 
-        # Формуємо повний рядок ціни
         price_full = f"{price} грн"
         if price_desc:
             price_full += f" ({price_desc})"
@@ -62,7 +60,6 @@ async def handle_web_app_data(message: types.Message):
             reply_markup=builder.as_markup()
         )
 
-        # Зберігаємо ціну для цього замовлення
         active_orders[sent_message.message_id] = {
             "client_chat_id": client_chat_id,
             "price": price_full
@@ -84,10 +81,7 @@ async def accept_order_callback(callback: types.CallbackQuery):
     driver_name = driver_user.first_name or "Водій"
     driver_username = driver_user.username.lower() if driver_user.username else ""
     
-    # Отримуємо авто водія з бази за його username
     car_info = DRIVER_CARS.get(driver_username, "Автомобіль уточнюється")
-
-    # Дістаємо збережену ціну замовлення
     order_info = active_orders.get(callback.message.message_id, {})
     price_str = order_info.get("price", "Уточнюється")
 
@@ -103,7 +97,6 @@ async def accept_order_callback(callback: types.CallbackQuery):
             reply_markup=None
         )
 
-        # Надсилаємо клієнту сповіщення із деталями авто та ціною
         await bot.send_message(
             chat_id=client_chat_id,
             text=(
