@@ -3,7 +3,6 @@ import logging
 import sys
 import json
 from aiogram import Bot, Dispatcher, F, types
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 TOKEN = "8817022184:AAHXN8Y5JO4UQcoIpN6Dt_QOX-r7fSjfVgY"
@@ -16,18 +15,25 @@ active_orders = {}
 
 @dp.message(F.web_app_data)
 async def handle_web_app_data(message: types.Message):
-    client_chat_id = message.from.user.id
-    client_name = message.from.user.first_name or "Клієнт"
+    user = message.from_user
+    client_chat_id = user.id
+    client_name = user.first_name or "Клієнт"
 
     try:
         data = json.loads(message.web_app_data.data)
 
+        addr_from = data.get('address_from', '')
+        addr_to = data.get('address_to', '')
+        price = data.get('price', '')
+        price_desc = data.get('price_desc', '')
+        phone = data.get('phone', '')
+
         order_text = (
             f"🚨 <b>НОВЕ ЗАМОВЛЕННЯ ТАКСІ</b> 🚨\n\n"
-            f"📍 <b>Звідки:</b> {data.get('address_from')}\n"
-            f"🏁 <b>Куди:</b> {data.get('address_to')}\n"
-            f"💰 <b>Вартість:</b> {data.get('price')} грн ({data.get('price_desc')})\n"
-            f"📞 <b>Телефон:</b> {data.get('phone')}\n"
+            f"📍 <b>Звідки:</b> {addr_from}\n"
+            f"🏁 <b>Куди:</b> {addr_to}\n"
+            f"💰 <b>Вартість:</b> {price} грн ({price_desc})\n"
+            f"📞 <b>Телефон:</b> {phone}\n"
             f"👤 <b>Клієнт:</b> {client_name} (ID: {client_chat_id})"
         )
 
@@ -49,12 +55,13 @@ async def handle_web_app_data(message: types.Message):
 
     except Exception as e:
         logging.error(f"Помилка обробки замовлення: {e}")
-        await message.answer("❌ Сталася помилка при оформленні замовлення. Спробуйте ще раз.")
+        await message.answer("❌ Сталася помилка при оформленні замовлення.")
 
 
 @dp.callback_query(F.data.startswith("accept_"))
 async def accept_order_callback(callback: types.CallbackQuery):
-    client_chat_id = int(callback.data.split("_")[1])
+    parts = callback.data.split("_")
+    client_chat_id = int(parts[1])
     driver_name = callback.from_user.first_name or "Водій"
 
     try:
@@ -82,7 +89,7 @@ async def accept_order_callback(callback: types.CallbackQuery):
 
     except Exception as e:
         logging.error(f"Помилка при прийнятті замовлення: {e}")
-        await callback.answer("Помилка! Можливо, замовлення вже прийняте іншим водієм.", show_alert=True)
+        await callback.answer("Помилка!", show_alert=True)
 
 
 async def main():
