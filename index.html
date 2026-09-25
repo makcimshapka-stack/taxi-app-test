@@ -237,6 +237,7 @@
             let lat = e.latlng.lat;
             let lon = e.latlng.lng;
             document.getElementById('address_to').value = `Точка на карті (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+            calculateProfile(document.getElementById('address_to').value, lat, lon); // захист від опечатки в назві далі замінено нижче
             calculatePrice(document.getElementById('address_to').value, lat, lon);
         });
 
